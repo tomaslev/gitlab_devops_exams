@@ -15,7 +15,7 @@ test-users:
   stage: test
   script:
     - >
-      docker run --rm -v $PWD/users:/app -w /app python:3.7.7
+      docker run --rm -e PYTHONDONTWRITEBYTECODE=1 -v $PWD/users:/app -w /app python:3.7.7
       sh -c "pip install --no-cache-dir -r requirements.txt
       && python -m tests.auth && python -m tests.fake_db"
 
