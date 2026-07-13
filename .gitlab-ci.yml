@@ -1,0 +1,10 @@
+default:
+  tags:
+    - exam-shell
+
+test-runner:
+  script:
+    - echo "Runner OK on $(hostname)"
+    - kubectl get ns
+    - docker --version
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
