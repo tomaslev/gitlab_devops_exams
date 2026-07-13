@@ -2,9 +2,30 @@ default:
   tags:
     - exam-shell
 
-test-runner:
+stages:
+  - test
+  - build
+
+variables:
+  GATEWAY_IMAGE: $DOCKER_USERNAME/exam-gateway
+  USERS_IMAGE: $DOCKER_USERNAME/exam-users
+  ORDERS_IMAGE: $DOCKER_USERNAME/exam-orders
+
+test-users:
+  stage: test
   script:
-    - echo "Runner OK on $(hostname)"
-    - kubectl get ns
-    - docker --version
+    - >
+      docker run --rm -v $PWD/users:/app -w /app python:3.7.7
+      sh -c "pip install --no-cache-dir -r requirements.txt
+      && python -m tests.auth && python -m tests.fake_db"
+
+build-images:
+  stage: build
+  script:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker build -t $GATEWAY_IMAGE:$CI_COMMIT_SHORT_SHA -t $GATEWAY_IMAGE:latest ./gateway
+    - docker build -t $USERS_IMAGE:$CI_COMMIT_SHORT_SHA -t $USERS_IMAGE:latest ./users
+    - docker build -t $ORDERS_IMAGE:$CI_COMMIT_SHORT_SHA -t $ORDERS_IMAGE:latest ./orders
+    - docker push --all-tags $GATEWAY_IMAGE
+    - docker push --all-tags $USERS_IMAGE
+    - docker push --all-tags $ORDERS_IMAGE
