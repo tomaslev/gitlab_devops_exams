@@ -1,3 +1,49 @@
+# GitLab CI/CD DevOps Exam — SkyBlue IT Limited
+
+DevOps exam project: a complete GitLab CI/CD pipeline that tests, builds, and
+deploys a three-service FastAPI application (gateway, users, orders) to a
+k3s Kubernetes cluster with four environments.
+
+## Architecture
+
+- **3 microservices** (see original README below): an API `gateway` handling
+  JWT auth and routing, plus internal `users` and `orders` services.
+- **Images** are built from the Dockerfiles in each service directory and
+  pushed to DockerHub: `<dockerhub-user>/exam-gateway`, `exam-users`,
+  `exam-orders`, tagged with the commit SHA and `latest`.
+- **Kubernetes deployment** via a single Helm chart (`charts/exam-app`)
+  containing a Deployment + Service per microservice. The gateway is exposed
+  as a NodePort; users and orders are internal (ClusterIP).
+- **4 environments** as namespaces on one cluster: `dev`, `qa`, `staging`,
+  `prod`, each on its own NodePort (30080–30083).
+
+## Pipeline (`.gitlab-ci.yml`)
+
+| Stage | Job | Behaviour |
+|---|---|---|
+| test | test-users | Runs the users service unit tests in a `python:3.7.7` container |
+| build | build-images | Builds all three images, pushes to DockerHub (SHA + latest tags) |
+| deploy_dev | deploy-dev | Automatic Helm deploy to `dev` |
+| deploy_qa | deploy-qa | Automatic Helm deploy to `qa` |
+| deploy_staging | deploy-staging | Automatic Helm deploy to `staging` |
+| deploy_prod | deploy-prod | **Manual** deploy to `prod`, job exists **only on `main`** |
+
+Each deploy runs `helm upgrade --install` with `--set image.tag=$CI_COMMIT_SHORT_SHA`,
+so every environment runs exactly the images built by that pipeline.
+
+Jobs run on a self-hosted shell runner (tag `exam-shell`) on the same EC2
+instance that hosts the k3s cluster. DockerHub credentials are stored as
+masked GitLab CI/CD variables (`DOCKER_USERNAME`, `DOCKER_PASSWORD`).
+
+## Links
+
+- DockerHub images: https://hub.docker.com/u/bonwitt
+- GitLab project (pipelines): https://github.com/tomaslev/gitlab_devops_exams
+
+---
+
+*(Original application README below)*
+
 # PROJET GITLAB DATASCIENTEST
 
 
