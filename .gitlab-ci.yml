@@ -5,6 +5,10 @@ default:
 stages:
   - test
   - build
+  - deploy_dev
+  - deploy_qa
+  - deploy_staging
+  - deploy_prod
 
 variables:
   GATEWAY_IMAGE: $DOCKER_USERNAME/exam-gateway
@@ -29,3 +33,44 @@ build-images:
     - docker push --all-tags $GATEWAY_IMAGE
     - docker push --all-tags $USERS_IMAGE
     - docker push --all-tags $ORDERS_IMAGE
+
+.deploy-template:
+  script:
+    - >
+      helm upgrade --install exam-app charts/exam-app
+      -n $NAMESPACE
+      --set image.tag=$CI_COMMIT_SHORT_SHA
+      --set gateway.nodePort=$NODE_PORT
+      --wait --timeout 3m
+    - kubectl get pods -n $NAMESPACE
+
+deploy-dev:
+  extends: .deploy-template
+  stage: deploy_dev
+  variables:
+    NAMESPACE: dev
+    NODE_PORT: "30080"
+
+deploy-qa:
+  extends: .deploy-template
+  stage: deploy_qa
+  variables:
+    NAMESPACE: qa
+    NODE_PORT: "30081"
+
+deploy-staging:
+  extends: .deploy-template
+  stage: deploy_staging
+  variables:
+    NAMESPACE: staging
+    NODE_PORT: "30082"
+
+deploy-prod:
+  extends: .deploy-template
+  stage: deploy_prod
+  variables:
+    NAMESPACE: prod
+    NODE_PORT: "30083"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
