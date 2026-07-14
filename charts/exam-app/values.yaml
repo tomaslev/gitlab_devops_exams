@@ -1,0 +1,15 @@
+image:
+  repository: bonwitt
+  tag: latest
+
+gateway:
+  replicas: 1
+  nodePort: 30080
+  usersServiceUrl: http://users:8000
+  ordersServiceUrl: http://orders:8000
+
+users:
+  replicas: 1
+
+orders:
+  replicas: 1

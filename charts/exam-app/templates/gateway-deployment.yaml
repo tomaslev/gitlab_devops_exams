@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+spec:
+  replicas: {{ .Values.gateway.replicas }}
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: "{{ .Values.image.repository }}/exam-gateway:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: 8000
+          env:
+            - name: USERS_SERVICE_URL
+              value: "{{ .Values.gateway.usersServiceUrl }}"
+            - name: ORDERS_SERVICE_URL
+              value: "{{ .Values.gateway.ordersServiceUrl }}"
